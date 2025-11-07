@@ -1,22 +1,21 @@
-# from asyncio import run, gather
 from uvicorn import run
-
-from init import db
-
 from fastapi import FastAPI
-from routers.organization import organization
+
+from repository.session import LocalSessionPG
+from repository.model import Base
+from router.incident import incident
+
 
 app = FastAPI()
-app.include_router(organization)
+app.include_router(incident)
 
-# async def init():
-#     is_table: bool = await db.create_table()
-#     if not is_table:
-#         return False
 
-#     insert_organization: bool = await db.insert_test_organization()
+@app.on_event("startup")
+async def create_db():
+    engine = LocalSessionPG().engine
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 if __name__ == "__main__":
-    # run(init())
     run("main:app")
